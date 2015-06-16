@@ -1,0 +1,31 @@
+(must be inside the appropriate repository in order to make these commands)
+
+git clone https://github.com/<user>/<repository> (clone a directory from anyone onto your local computer)
+git commit -am '...' -- save changes that you've made to local computer
+git push -- push the changes from your directory to the online version
+git pull -- pull the changes from the online version to your directory
+
+ls -l ___.py
+chmod +x ___.py (make it executable)
+./___.py (then you can run it as a program)
+< program result>
+cat ___.py (if you want to see the contents of the file in the terminal)
+
+git status (see if there are changes to commit, or untracked files)
+git add filename.ext (adds a new file to online version)
+
+git diff (see changes since last commit)
+
+THE FIRST COMMAND YOU DO WHENEVER YOU START A WORK SESSION SHOULD BE git pull. And when you stop, git push.
+
+COMMON ERRORS:
+
+My terminal doesn't recognize me: 
+git config --global credential.helper cache
+git config --global credential.helper 'cache --timeout=7200' (so you don't have to type user/pass every time for a couple of hours)
+
+Running some git command pops up vi/vim: You are being asked to confirm a default commit message. Save the open file and quit the editor by typing ":wq," then enter (means "write, quit")
+
+Conflicting file changes (like from two different computers): if you try to pull the changes, there's a "CONFLICT." go to the file in question and see the conflict yourself, then choose the edit you want to keep.
+
+Doesn't allow you to push: You also have to pull before you push, because you might have some remote changes that you have not (yet) made local.
