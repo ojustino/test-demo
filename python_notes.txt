@@ -8,3 +8,19 @@ The list comprehension above prints:
 3 determination
 
 You can turn strings upper or lower case with words.upper() or words.lower()
+
+Example of object creation (with modules inside)
+
+class MyObject(object):
+	def __init__(self,x,y=None)
+		self.x = x
+		if y is not None:
+			self.y -y
+	def addme(self):
+		return self.x + self.y
+	def copy(self)***
+		return copy.copy(self) 
+
+*** If you said that a = obj.x, then said a = 6, that changes both a AND obj.x. Using copy.copy (like a = obj.x.copy()), the two initially related variables can become distinct entities.
+
+Also, self doesn't need to be called in parentheses, because it's always implied.
