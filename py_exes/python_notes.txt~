@@ -1,0 +1,10 @@
+for i,word in enumerate(words).
+
+if words = 'knowledge of self determination'
+The list comprehension above prints:
+0 knowledge
+1 of 
+2 self
+3 determination
+
+You can turn strings upper or lower case with words.upper() or words.lower()
