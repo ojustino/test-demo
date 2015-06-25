@@ -2,6 +2,8 @@ import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
 
+#plt.ion()
+
 def normpdf(A,sigma,mu):
     prob = 1/(np.sqrt(2*np.pi*sigma**2)) * np.exp(-1./2 * ((A-mu)**2))
     return prob
@@ -16,38 +18,48 @@ def model(x,a_0,a_1,sigma=0): # x is a numpy array, a_0 and a_1 are preferrably 
         line[z] += sigma*rand.randn() 
         z += 1
 
-    plt.plot(np.arange(points),line,color='#00245D')
+    plt.plot(x,line,color='#00245D')
 
     errs = sigma * rand.randn(points)
     #print(np.shape(x), np.shape(line), np.shape(errs))
-    plt.errorbar(np.arange(points),line,yerr=errs,fmt='.',ecolor='#F1AA00')
-    plt.xlim(-.5,2.5)
+    plt.errorbar(x,line,yerr=errs,fmt='.',ecolor='#F1AA00')
+    plt.xlim(min(x)-.5,max(x)+.5)
     plt.show()
     return line
 
-#model(np.array([1,2,3]),-1.,2.,6.5)
+model(np.array([1.,2.,3.,4.,5.]),1.,2.,sigma=0.)
 
-def poly(x,a,plot=False,sigma=0): # a is a matrix of coefficients for x, which is also an array. you will sum over a_i * x^ifrom 0 to N-1
+# poly() returns len(x) points on a line whose polynomial equation has coefficients 'a' and has len(a)-1 as its highest degree. can add noise with a sigma term.
+def poly(x,a,plot=False,sigma=0): 
     xsize = float(len(x))
     asize = float(len(a))
-    xarray = np.resize(x, (xsize,asize))
-    aarray = np.resize(a, (asize,xsize))
+    xarray = np.resize(x, (asize,xsize))
+    aarray = np.resize(a, (xsize,asize))
     
-    powers = np.zeros(xsize)
-    b = 0
-    while(b < 0):
-        powers[a] = float(b)
-        b += 1
+    powers = np.arange(asize)
+    parray = np.resize(powers, (xsize,asize))
 
-    y = xarray**powers * aarray.T
+    y = aarray.T * (xarray**parray.T)
     # plotting sum of each column against x
-    ysums = np.sum(y,axis=0)
+    ysums = np.sum(y,axis=0) + sigma*rand.randn(xsize)
+    print xarray
+    print aarray
+    print parray
 
     if plot:
-        plt.plot(x,ysums)
+        #fig = plt.figure(1)
+        #plt.clf() 
+        plt.scatter(x,ysums)
+        #plt.(-10000,350000)
         plt.show()
 
-poly([1,2],[7,5,1],plot=True)
+#poly([1.,2.,3.,4.,5.],[1.,2.],plot=True,sigma=0.)
+
+'''def fit_model(sigma):
+
+    a0 = []; a1 = []
+    x = np.arange(5)
+    lines = [model(x,1.,2.,sigma=.2) for i in range(100)]'''
 
 # datum 1
 sigma = 2.
