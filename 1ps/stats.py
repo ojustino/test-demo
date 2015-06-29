@@ -2,7 +2,7 @@ import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
 
-plt.ion()
+#plt.ion()
 
 def normpdf(A,sigma,mu):
     prob = 1/(np.sqrt(2*np.pi*sigma**2)) * np.exp(-1./2 * ((A-mu)**2))
@@ -56,33 +56,53 @@ def poly(x,a,plot=False,sigma=0):
 
     return ysums
 
-#poly([1.,2.,3.,4.,5.],[1.,2.],plot=True,sigma=0.)
-poly([1.,2.,3.,4.,5.],[2.,3.,-1.],plot=True)
+#poly([1.,2.,3.,4.,5.],[1.,2.],plot=True)
+#poly([1.,2.,3.,4.,5.],[2.,3.,-1.],plot=True)
 
-def logL(N,D,mu,sigma): # N is ___, D is the guesses array, mu is the 'truth.'
-    loglike = -1/2*N*np.log(2*np.pi*sigma) - 1/2*((D-mu)/(sigma))**2
-    return loglike
+def logL(N,D,mu,sigma=0): # N is ___, D is the guesses array, mu is the 'truth.'
+    constant = -1./2*N*np.log(2*np.pi*sigma**2)
+    chi2s    = ((D-mu)/(sigma))**2
+    chi2tot  = -1./2*np.sum(chi2s, axis=0)
+    loglike  = constant + chi2tot  
+    return loglike # should just be one number
 
-def fit_model(sigma):
-    x = np.array([0.,1,2,3,4])
+def fit_model(sig):
+    x = np.array([0.,1,2,3,4]) #0.,1,2,3,4
     a = np.array([1.,2])
-    truth = poly(x,a,sigma=.5) # we're given that sigma is .5. DON'T TOUCH ME
+    truth = poly(x,a,sigma=sig) # we're given that sigma is .5. DON'T TOUCH ME
     
-    a0 = np.linspace(.85,1.15,31); len0 = len(a0)
-    a1 = np.linspace(1.85,2.15,31); len1 = len(a1)
+    a0 = np.linspace(.85,1.15,101); len0 = len(a0) #31
+    a1 = np.linspace(1.85,2.15,101); len1 = len(a1) #31
 
     j = 0; k = 0
-    guesses = np.zeros((len0,len1))
 
-    while(j < len0): # each ROW of guesses has a different a0 guess
-        while(k < len1): # each COLUMN of guesses has a different a1 guess
-            guesses[j][k] = poly(x,[a0[j],a1[k]],sigma=.5) #ERROR HERE
+    likely = np.zeros([len0,len1])
+
+    while(j < len0):
+        while(k < len1):
+            D = poly(x,[a0[j],a1[k]]) # sigma should be 0.
+            #print D
+            likely[j][k] = logL(len(x),D,truth,sigma=sig) # N could also be len
             k += 1
         j += 1
+        k = 0
+
+    #like2 = np.exp(likely)
+    print likely
+    likelynew = np.exp(likely-likely.max())
+
+    #plt.contourf(a0,a1,likely)
+    plt.contourf(a0,a1,likelynew)
+    plt.show()
 
     #lines = [model(x,1.,2.,sigma=.2) for i in range(100)]
 
-# datum 1
+    # to marginalize: sum one parameter over one value of the other (like take all values of a0 with the same a1 -- just one COLUMN of the likelihood array), then plot the resulting curve. see Maurice for more...?
+
+fit_model(.1)
+
+
+'''# datum 1
 sigma = 2.
 mu = np.arange(20,60.5,.5)
 A1 = 41.4
@@ -114,6 +134,4 @@ plt.plot(prob1*prob2*prob3,linewidth=6,alpha=.45,color='#FAB383')
 plt.title('Gaussians')
 plt.xlabel('mu')
 plt.ylabel('probability')
-plt.show()
-
-
+plt.show()'''
