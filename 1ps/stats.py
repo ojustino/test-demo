@@ -59,7 +59,7 @@ def poly(x,a,plot=False,sigma=0):
 #poly([1.,2.,3.,4.,5.],[1.,2.],plot=True)
 #poly([1.,2.,3.,4.,5.],[2.,3.,-1.],plot=True)
 
-def logL(N,D,mu,sigma=0): # N is ___, D is the guesses array, mu is the 'truth.'
+def logL(N,D,mu,sigma=0): # N data points, D is measurements, mu is truth/model.
     constant = -1./2*N*np.log(2*np.pi*sigma**2)
     chi2s    = ((D-mu)/(sigma))**2
     chi2tot  = -1./2*np.sum(chi2s, axis=0)
@@ -88,16 +88,18 @@ def fit_model(sig):
         k = 0
 
     #like2 = np.exp(likely)
-    print likely
+    #print likely
     likelynew = np.exp(likely-likely.max())
 
     #plt.contourf(a0,a1,likely)
     plt.contourf(a0,a1,likelynew)
     plt.show()
 
+    # we don't really care about a1 (y intercept, so we marginalize it out. to marginalize: sum one parameter over one value of the other (like take all values of a0 with the same a1 -- just one COLUMN of the likelihood array), then plot the resulting curve.
+    marglike = np.sum(likelynew,axis=0)
+    plt.plot(a1,marglike,linewidth=3,linestyle='--',color='#85B7EA')
+    plt.show()
     #lines = [model(x,1.,2.,sigma=.2) for i in range(100)]
-
-    # to marginalize: sum one parameter over one value of the other (like take all values of a0 with the same a1 -- just one COLUMN of the likelihood array), then plot the resulting curve. see Maurice for more...?
 
 fit_model(.1)
 
