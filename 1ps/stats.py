@@ -31,7 +31,7 @@ def model(x,a_0,a_1,sigma=0): # x is a numpy array, a_0 and a_1 are preferrably 
 #model(np.array([1.,2.,3.,4.,5.]),1.,2.,sigma=0.)
 
 # poly() returns len(x) points on a line whose polynomial equation has coefficients 'a' and has len(a)-1 as its highest degree. can add noise with a sigma term.
-def poly(x,a,plot=False,sigma=0): 
+def poly(x,a,sigma=0.,plot=False): 
     xsize = float(len(x))
     asize = float(len(a))
     xarray = np.resize(x, (asize,xsize))
@@ -96,13 +96,71 @@ def fit_model(sig):
     plt.show()
 
     # we don't really care about a1 (y intercept, so we marginalize it out. to marginalize: sum one parameter over one value of the other (like take all values of a0 with the same a1 -- just one COLUMN of the likelihood array), then plot the resulting curve.
-    marglike = np.sum(likelynew,axis=0)
-    plt.plot(a1,marglike,linewidth=3,linestyle='--',color='#85B7EA')
+    marglike = np.sum(likelynew,axis=1)
+    plt.plot(a0,marglike,linewidth=3,linestyle='--',color='#85B7EA')
     plt.show()
     #lines = [model(x,1.,2.,sigma=.2) for i in range(100)]
 
-fit_model(.1)
+#fit_model(.1)
 
+# a more general chi squared minimization method. sigma constant for now
+def polynices(x,D,degree,sigma=1.): # should take data. degree is a float now; it's order + 1 (i.e. 0th order means degree = 1.)
+    points = len(x)
+    xarray = np.resize(x, (degree, points))
+    powers = np.arange(degree)
+    parray = np.resize(powers, (points,degree))
+
+    B = xarray**(parray.T)
+    B = np.matrix(B.T) # now has dimensions len(x) by len(a).
+
+    # just a test; degrees was an array here
+    '''if D == 0:
+        D = poly(x,degrees,sigma=.02) 
+        D = np.matrix(D).T # now (supposedly) has dimensions a by 1.
+    else:'''
+    D += rand.randn(points)*sigma # this is 'noise'
+    D = np.matrix(D).T # now (supposedly) has dimensions a by 1.
+    #print D
+
+    A = np.linalg.inv(B.T*B)*B.T*D
+    # multiiplication is equivalent to dot product for 2D numpy matrices
+
+    return A[0], A[1], A[2]
+
+    # loop 'points' times. in each iteration, newdata = data, then newdata += noise, and newpars[i] = polynices(x,newdata,degree,sigma=sig).
+
+def hists(X):
+    x,D,degree,sigma = X
+    
+    i = 0
+    points = len(x)
+    trials = 1000
+    newpars = np.zeros([trials,degree])
+
+    while(i < trials):
+        newdata = D + rand.randn(points)*sigma
+        #print np.shape(newdata), np.shape(noise)
+        newpars[i] = polynices(x,newdata,degree,sigma=sigma)
+        i += 1
+
+    print newpars
+
+    j = 0
+    while(j < degree):
+        plt.hist(newpars[:,j],bins=50,color='#F0EBD2')
+        plt.show()
+        j += 1
+
+# test all this
+x   = np.array([-10.,-5,0,5,10])
+points = len(x)
+a   = np.array([-3.,11,4]) # TOGGLE. problem when first index is 1???
+sig = np.array([.2,.5,3,0,.97]) 
+data = poly(x,a,sig)
+data += rand.randn(points) * sig # adding noise
+degree = 3 # order of desired polynomial, PLUS THREE
+X = [x,data,degree,sig]
+hists(X)
 
 '''# datum 1
 sigma = 2.
