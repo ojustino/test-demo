@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.random as rand
 import matplotlib.pyplot as plt
+import scipy.optimize as opt
+#import scipy.interpolate as interpolate
 
 #plt.ion()
 
@@ -101,7 +103,19 @@ def fit_model(sig):
     plt.show()
     #lines = [model(x,1.,2.,sigma=.2) for i in range(100)]
 
-#fit_model(.1)
+    #intrp = interpolate.interp1d(marglike,a0)
+    
+    cdf = np.zeros(len(marglike))
+    i = 0
+    while(i < len(cdf)):
+        cdf[i] = sum(marglike[0:i])
+        i += 1
+    cdf = cdf/max(cdf)
+
+    plt.plot(a0,cdf,linewidth=3,linestyle='--',color='#85B7EA')
+    plt.show()
+
+#fit_model(.01)
 
 # a more general chi squared minimization method. sigma constant for now
 def polynices(x,D,degree,sigma=1.): # should take data. degree is a float now; it's order + 1 (i.e. 0th order means degree = 1.)
@@ -152,15 +166,146 @@ def hists(X):
         j += 1
 
 # test all this
-x   = np.array([-10.,-5,0,5,10])
+'''x   = np.array([-10.,-5,0,5,10])
 points = len(x)
 a   = np.array([-3.,11,4]) # TOGGLE. problem when first index is 1???
 sig = np.array([.2,.5,3,0,.97]) 
 data = poly(x,a,sig)
 data += rand.randn(points) * sig # adding noise
-degree = 3 # order of desired polynomial, PLUS THREE
+degree = 3 # order of desired polynomial, PLUS ONE?
 X = [x,data,degree,sig]
-hists(X)
+hists(X)'''
+
+#### begin LMFIT ####
+def makedata(params,x,sig=0.):
+    A,B,C,E = params
+    D = A*np.exp(-1./2*(B-x/C)**2) + E
+    D += rand.randn(len(x)) * sig
+    return D
+
+def residuals(params,x,sigma):
+    model = makedata(params,x)
+    data  = makedata(params,x,sig=sigma)
+    return (data-model)/sigma
+
+def lmfit(params,x,sigma):
+    fit = opt.leastsq(residuals,params,args=(x,sigma))
+    one, = plt.plot(x,makedata(fit[0],x),linewidth=3,linestyle='--',color='#004953')
+    two = plt.scatter(x,makedata(params,x,sig=.5),marker='o',color='#ACC0C6')
+    plt.legend((one,two),('fit','data'),loc='upper left',shadow=True)
+    plt.show()
+
+    print fit[0]
+    return fit[0]
+
+x = np.linspace(-10,20,80000)
+A = 10.; B = 5; C = 2; E = 4; sigma = .25
+params = np.array([A,B,C,E]) # amplitude,centroid,width,offset
+lmfit(params,x,sigma)
+#### end LMFIT ####
+
+#### begin MCMC ####
+# NEW
+def mcmc(fit,steps,sig): # fit is the result of leastsq; sigma for each param
+    Npars = len(fit)
+    chain = np.zeros([steps,Npars]) # create storage array
+    N_accept = 0; N_reject = 0
+    
+    i = 0
+    while(i < steps):
+        old_params = fit
+        new_params = old_params
+
+        # step 1 -- choose parameter of interest
+        index = round(rand.uniform()*(Npars-1)) # now we operate on fit[index]
+
+        # step 2 -- make a furtive step
+        new_params[index] += rand.randn()*sig[index]
+
+        # step 3 -- evaluate likelihoods
+        likely_old = logL(Npars,fit,old_params,sigma=sig[index])
+        likely_new = logL(Npars,fit,new_params,sigma=sig[index])
+        #logL(N,D,mu,sigma=0)
+        
+        # step 4 -- conditionals... do I accept the step?
+        if likely_new > likely_old:
+            fit = new_params
+            N_accept += 1
+            chain[i] = fit
+        else:
+            if (rand.uniform() > likely_new - likely_old):
+                fit = new_params
+                N_accept += 1
+                chain[i] = fit
+            else:
+                fit = old_params
+                N_reject += 1
+                chain[i] = fit
+        i += 1
+
+    print chain
+    print N_accept/steps, N_reject/steps
+
+x = np.linspace(-10,20,200)
+steps = 15
+sigma = .001
+#fits = lmfit(params,x,sigma)
+param_sigs = np.array([.4,.6,.02,.88])
+#mcmc(fits,steps,param_sigs)
+#### end MCMC ####
+
+'''#OLD???
+def mcmc(x,a,steps,sigma=.0001): # watch out for divide by zero if sig=0 in logL???
+    D = poly(x,a)
+    mu = poly(x,a,sigma=.5) # "truth." poly gives y vals for your x's
+
+    Npars = len(D) # like degree in past functions
+    chain = np.zeros([steps,Npars]) # create storage array
+    N_accept = 0; N_reject = 0
+    i = 0
+
+    while(i < steps):
+        old_params = D
+        new_params = old_params # will change in step 2
+        likely_old = logL(Npars,old_params,mu,sigma=.0001) # for use in step 3
+        #print likely_old
+
+        # step 1 -- choose parameter of interest
+        index = round(rand.uniform()*(Npars-1)) # now we operate on A[index]
+        
+        # step 2 -- make a furtive step
+        new_params[index] += rand.randn() # times sigma. THINK ABOUT VALUE
+
+        # step 3 -- evaluate new likelihood
+        likely_new = logL(Npars,new_params,mu,sigma=.0001)
+        #print likely_new
+
+        # step 4 -- conditionals... do I accept the step?
+        if likely_new > likely_old: # WHAT IF THEY'RE EQUAL?
+            D = new_params
+            N_accept += 1
+            chain[i] = D
+        else:
+            if (rand.uniform() > likely_new - likely_old):
+                D = new_params
+                N_accept += 1
+                chain[i] = D
+            else:
+                D = old_params
+                N_reject += 1
+                chain[i] = D
+        i += 1
+
+    #plt.plot(x,D,color='#008E97')
+    #plt.plot(x,chain,color='#F58220')
+    #plt.show()
+
+    #print chain
+    print N_accept/steps
+    print N_reject/steps
+
+    return chain'''
+
 
 '''# datum 1
 sigma = 2.

@@ -1,0 +1,27 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+'''data should be whether or not a star had a companion.
+so d is an a array with three 1s and 18 0s.'''
+
+f = .8
+d_i = np.array([1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]) # for 21 stars
+
+N = 0; k = 0
+j = 0
+while(j < len(d_i)):
+    N += 1
+    if d_i[j] == 1:
+        k += 1
+    j += 1
+
+print k, N
+
+prob_d = f**k * (1-f)**(N-k)
+'''probability of this data is f**3 * (1-f)**18'''
+
+H = np.linspace(0,1,100)
+sigma = 1./15
+prior = np.exp(-1./2*((.25-x)/sigma)**2)
+
+
